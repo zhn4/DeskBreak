@@ -176,6 +176,60 @@ function Toggle({
   );
 }
 
+type StretchPose = "neck" | "chest" | "side" | "legs";
+
+function PoseIllustration({ pose }: { pose: StretchPose }) {
+  if (pose === "neck") {
+    return (
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <circle cx="40" cy="19" r="8" />
+        <path d="M40 27v25m-16-9 16-10 16 10M31 69l9-17 9 17M50 13c7 2 11 7 12 14" />
+        <path className="pose-arrow" d="m58 24 4 3 2-5" />
+      </svg>
+    );
+  }
+
+  if (pose === "chest") {
+    return (
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <circle cx="40" cy="18" r="8" />
+        <path d="M40 26v27m0-18L22 42m18-7 18 7M31 69l9-16 9 16M22 42l-7-6m43 6 7-6" />
+        <path className="pose-arrow" d="M17 27c-5 3-7 8-6 14m52-14c5 3 7 8 6 14" />
+      </svg>
+    );
+  }
+
+  if (pose === "side") {
+    return (
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <circle cx="35" cy="18" r="8" />
+        <path d="M36 26c0 11 3 19 11 27m-10-20L26 47m11-14 6-14 5-7M36 69l11-16 6 16M36 69l-2-25" />
+        <path className="pose-arrow" d="M54 28c5 3 8 8 8 14m-4-3 4 3 2-5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="32" cy="17" r="8" />
+      <path d="M32 25c5 8 11 14 20 17M38 34 21 43m31-1 12 7M52 42l-7 25M21 43l-6 22m6-22 18 10" />
+      <path className="pose-arrow" d="M54 31c7 0 12 3 15 8m-5-1 5 1-1-5" />
+    </svg>
+  );
+}
+
+const stretches: { pose: StretchPose; name: string; duration: string; tip: string }[] = [
+  { pose: "neck", name: "颈部侧拉伸", duration: "左右各 15 秒", tip: "肩膀放松，耳朵缓慢靠近肩部" },
+  { pose: "chest", name: "扩胸拉伸", duration: "保持 20 秒", tip: "双手向后打开，挺胸但不要憋气" },
+  {
+    pose: "side",
+    name: "站姿侧伸展",
+    duration: "左右各 15 秒",
+    tip: "手臂越过头顶，身体平稳向侧面弯",
+  },
+  { pose: "legs", name: "腿后侧拉伸", duration: "左右各 20 秒", tip: "脚跟着地，背部保持自然伸直" },
+];
+
 export default function App() {
   const [reminders, setReminders] = useState<Reminder[]>(() => {
     try {
@@ -245,7 +299,10 @@ export default function App() {
 
   useEffect(() => {
     if (!previewToast) return;
-    const timeout = window.setTimeout(() => setPreviewToast(null), 4200);
+    const timeout = window.setTimeout(
+      () => setPreviewToast(null),
+      previewToast.reminderId === "stand" ? 10000 : 4200,
+    );
     return () => window.clearTimeout(timeout);
   }, [previewToast]);
 
@@ -456,15 +513,23 @@ export default function App() {
       {previewToast && (
         <div className="toast" role="status">
           <div className="toast-icon">W</div>
-          <div>
+          <div className="toast-copy">
             <strong>{previewToast.title}</strong>
             <p>{previewToast.body}</p>
           </div>
           <div className="toast-actions">
+            <button
+              className="toast-close"
+              type="button"
+              onClick={() => setPreviewToast(null)}
+              aria-label="关闭提醒"
+            >
+              ×
+            </button>
             {previewToast.reminderId === "stand" && (
               <button
+                className="toast-accept"
                 type="button"
-                className="toast-acknowledge"
                 onClick={() => {
                   setPreviewToast(null);
                   setShowStretchGuide(true);
@@ -473,62 +538,57 @@ export default function App() {
                 好的
               </button>
             )}
-            <button type="button" onClick={() => setPreviewToast(null)} aria-label="关闭提醒">
-              ×
-            </button>
           </div>
         </div>
       )}
 
       {showStretchGuide && (
-        <div className="stretch-modal-backdrop">
+        <div className="modal-backdrop" role="presentation">
           <section
             className="stretch-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="stretch-modal-title"
+            aria-labelledby="stretch-title"
           >
-            <header className="stretch-modal-header">
-              <p>STRETCH BREAK</p>
-              <h2 id="stretch-modal-title">久坐拉伸跟练</h2>
-              <span>选几个动作慢慢活动，保持自然呼吸，不需要勉强拉伸。</span>
-            </header>
-            <div className="stretch-exercises">
-              <article>
-                <div>
-                  <h3>肩颈侧屈</h3>
-                  <strong>20 秒 / 侧</strong>
-                </div>
-                <p>坐直或站直，肩膀放松，将耳朵轻轻靠向一侧肩膀，再换边；不要用手压头。</p>
-              </article>
-              <article>
-                <div>
-                  <h3>胸部打开</h3>
-                  <strong>20 秒</strong>
-                </div>
-                <p>站立，双手轻扶腰侧，肩膀轻轻向后下方放松，打开胸口并自然呼吸。</p>
-              </article>
-              <article>
-                <div>
-                  <h3>坐姿躯干转体</h3>
-                  <strong>15 秒 / 侧</strong>
-                </div>
-                <p>双脚平放地面，坐稳后缓慢转向一侧，手轻扶椅背辅助，再换边；不要扭到疼痛。</p>
-              </article>
-              <article>
-                <div>
-                  <h3>站姿髋前侧伸展</h3>
-                  <strong>20 秒 / 侧</strong>
-                </div>
-                <p>
-                  前后分腿站立并扶稳桌沿，后脚跟抬起，身体重心轻轻前移，感受后侧髋部前方伸展，再换边。
-                </p>
-              </article>
+            <div className="modal-heading">
+              <div>
+                <p>QUICK RESET · 2 MIN</p>
+                <h2 id="stretch-title">起身松一松，G</h2>
+                <span>跟着做一轮，把久坐的紧绷留在椅子上。</span>
+              </div>
+              <div className="modal-badge" aria-hidden="true">
+                <Icon name="stretch" />
+              </div>
             </div>
-            <p className="stretch-caution">如有疼痛或不适，请立即停止并选择舒适的动作。</p>
-            <footer className="stretch-modal-footer">
-              <button type="button" autoFocus onClick={() => setShowStretchGuide(false)}>
-                确认
+
+            <div className="stretch-grid">
+              {stretches.map((stretch, index) => (
+                <article className="stretch-item" key={stretch.pose}>
+                  <div className="pose-box">
+                    <span>0{index + 1}</span>
+                    <PoseIllustration pose={stretch.pose} />
+                  </div>
+                  <div className="stretch-copy">
+                    <h3>{stretch.name}</h3>
+                    <strong>{stretch.duration}</strong>
+                    <p>{stretch.tip}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="modal-note">
+              <span>!</span>
+              动作保持舒适即可；如果感到疼痛，请立即停止。
+            </div>
+
+            <footer className="modal-footer">
+              <p>MOVE EASY. FEEL BETTER.</p>
+              <button type="button" onClick={() => setShowStretchGuide(false)} autoFocus>
+                确认完成
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m3 8 3 3 7-7" />
+                </svg>
               </button>
             </footer>
           </section>

@@ -1,6 +1,6 @@
 (function () {
   const listenerKey = "__westsideReminderListener";
-  const contentVersion = "2";
+  const contentVersion = "4";
   const previousListener = window[listenerKey];
   if (typeof previousListener === "function") {
     chrome.runtime.onMessage.removeListener(previousListener);
@@ -32,133 +32,268 @@
         #toast {
           box-sizing: border-box;
           position: fixed;
-          right: 20px;
-          bottom: 20px;
-          display: flex;
-          gap: 12px;
-          align-items: flex-start;
-          width: min(390px, calc(100vw - 40px));
-          padding: 16px;
-          border: 1px solid #e5e7eb;
-          border-radius: 14px;
-          background: #ffffff;
-          color: #172033;
-          box-shadow: 0 12px 36px rgba(20, 32, 54, 0.2);
+          right: 22px;
+          bottom: 22px;
+          display: grid;
+          grid-template-columns: 52px minmax(0, 1fr) 88px;
+          gap: 16px;
+          align-items: center;
+          width: min(540px, calc(100vw - 32px));
+          min-height: 132px;
+          padding: 20px 24px;
+          border: 1px solid #5c7548;
+          border-radius: 20px;
+          background: #20251f;
+          color: #e9eee8;
+          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
           font: 14px/1.5 system-ui, sans-serif;
           pointer-events: auto;
         }
         #mark {
           display: grid;
-          flex: 0 0 34px;
-          width: 34px;
-          height: 34px;
+          width: 52px;
+          height: 52px;
           place-items: center;
-          border-radius: 10px;
-          background: #e8f8fc;
-          color: #1689a8;
-          font-weight: 800;
+          border-radius: 14px;
+          background: #b8ed64;
+          color: #141814;
+          font: 900 26px "Barlow Condensed", sans-serif;
         }
         #content { flex: 1; min-width: 0; }
-        #title { margin: 0 0 3px; font-size: 15px; font-weight: 700; }
-        #message { margin: 0; color: #596579; overflow-wrap: anywhere; }
-        #actions { display: flex; flex: 0 0 auto; gap: 6px; align-items: center; }
+        #title { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+        #message { margin: 0; color: #9ca69f; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+        #actions {
+          align-self: stretch;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 12px;
+        }
         button { cursor: pointer; font-family: inherit; }
         #okay {
-          padding: 6px 10px;
+          min-width: 88px;
+          height: 44px;
+          padding: 0 16px;
           border: 0;
-          border-radius: 8px;
-          background: #1689a8;
-          color: #ffffff;
-          font-size: 12px;
-          font-weight: 700;
+          border-radius: 12px;
+          background: #b8ed64;
+          color: #141814;
+          font-size: 15px;
+          font-weight: 800;
+          transition: 150ms ease;
         }
+        #okay:hover { background: #ceff80; transform: translateY(-1px); }
         #close {
-          padding: 3px 6px;
+          width: 24px;
+          height: 24px;
+          margin: -5px -5px 0 0;
+          display: grid;
+          place-items: center;
+          padding: 0;
           border: 0;
-          border-radius: 6px;
           background: transparent;
-          color: #758096;
-          font-size: 20px;
+          color: #778079;
+          font-size: 24px;
           line-height: 1;
         }
-        #close:hover { background: #f1f3f6; color: #172033; }
+        #close:hover { color: #d3ddd4; }
         #backdrop {
           position: fixed;
           inset: 0;
           display: grid;
           place-items: center;
-          padding: 16px;
-          background: rgba(15, 23, 42, 0.55);
+          padding: 24px 16px;
+          background: rgba(5, 7, 6, 0.78);
+          backdrop-filter: blur(7px);
           pointer-events: auto;
         }
         #dialog {
           box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          width: min(560px, calc(100vw - 32px));
-          max-height: min(84vh, 720px);
-          overflow: hidden;
-          border: 1px solid #e6eaf0;
-          border-radius: 18px;
-          background: #ffffff;
-          color: #172033;
-          box-shadow: 0 24px 70px rgba(10, 20, 40, 0.28);
-          font: 14px/1.55 system-ui, sans-serif;
+          width: min(620px, 100%);
+          max-height: calc(100vh - 32px);
+          overflow: auto;
+          color: #f1f0e9;
+          border: 1px solid #45463c;
+          border-radius: 19px;
+          background: linear-gradient(140deg, rgba(255, 182, 73, 0.08), transparent 38%), #191c1a;
+          box-shadow: 0 28px 90px rgba(0, 0, 0, 0.65);
+          font: 14px/1.5 system-ui, sans-serif;
         }
-        #dialog-header { padding: 22px 24px 14px; }
-        #eyebrow {
+        #modal-heading {
+          padding: 24px 25px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          border-bottom: 1px solid #30332f;
+        }
+        #modal-heading p {
           margin: 0 0 5px;
-          color: #1689a8;
-          font-size: 11px;
-          font-weight: 800;
+          color: #ffb649;
+          font: 700 10px/1 system-ui, sans-serif;
+          letter-spacing: 0.18em;
+        }
+        #stretch-title { margin: 0 0 7px; font-size: 22px; font-weight: 800; }
+        #modal-heading span { color: #8c948e; font-size: 11px; }
+        #modal-badge {
+          width: 50px;
+          height: 50px;
+          flex: 0 0 auto;
+          display: grid;
+          place-items: center;
+          color: #ffb649;
+          border: 1px solid rgba(255, 182, 73, 0.35);
+          border-radius: 13px;
+          background: rgba(255, 182, 73, 0.1);
+          transform: rotate(3deg);
+        }
+        #modal-badge svg {
+          width: 28px;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 1.7;
+        }
+        #stretch-grid {
+          padding: 18px 20px;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .stretch-item {
+          min-width: 0;
+          padding: 10px;
+          display: grid;
+          grid-template-columns: 88px 1fr;
+          align-items: center;
+          gap: 12px;
+          border: 1px solid #303430;
+          border-radius: 12px;
+          background: #1e211f;
+        }
+        .pose-box {
+          position: relative;
+          height: 88px;
+          display: grid;
+          place-items: center;
+          overflow: hidden;
+          color: #ffb649;
+          border-radius: 9px;
+          background:
+            linear-gradient(rgba(255, 182, 73, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 182, 73, 0.04) 1px, transparent 1px), #171a18;
+          background-size: 12px 12px;
+        }
+        .pose-box > span {
+          position: absolute;
+          top: 6px;
+          left: 7px;
+          color: #5e5341;
+          font: 800 9px/1 system-ui, sans-serif;
           letter-spacing: 0.08em;
         }
-        #dialog-title { margin: 0; font-size: 21px; line-height: 1.3; }
-        #intro { margin: 7px 0 0; color: #697386; }
-        #exercises {
-          display: grid;
-          gap: 10px;
-          overflow: auto;
-          padding: 0 24px 8px;
+        .pose-box svg {
+          width: 72px;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2.2;
         }
-        .exercise {
-          padding: 12px 14px;
-          border: 1px solid #e8edf2;
-          border-radius: 12px;
-          background: #f8fafc;
-        }
-        .exercise-heading {
-          display: flex;
-          justify-content: space-between;
-          gap: 12px;
-          align-items: baseline;
-        }
-        .exercise h3 { margin: 0; font-size: 14px; }
-        .duration { flex: 0 0 auto; color: #1689a8; font-size: 12px; font-weight: 700; }
-        .exercise p { margin: 5px 0 0; color: #596579; }
-        #caution { margin: 10px 24px 0; color: #758096; font-size: 12px; }
-        #dialog-footer {
-          display: flex;
-          justify-content: flex-end;
-          padding: 16px 24px 20px;
-        }
-        #confirm {
-          min-width: 84px;
-          padding: 9px 18px;
-          border: 0;
-          border-radius: 9px;
-          background: #1689a8;
-          color: #ffffff;
-          font-size: 14px;
+        .pose-box .pose-arrow { stroke: #b8ed64; stroke-dasharray: 2 3; }
+        .stretch-copy h3 { margin: 0 0 5px; color: #e9eae4; font-size: 13px; font-weight: 700; }
+        .stretch-copy strong {
+          display: inline-block;
+          margin-bottom: 6px;
+          color: #ffb649;
+          font-size: 9px;
           font-weight: 700;
         }
-        #confirm:hover, #okay:hover { filter: brightness(0.94); }
+        .stretch-copy p { margin: 0; color: #7e8680; font-size: 9px; line-height: 1.5; }
+        #modal-note {
+          margin: 0 20px 18px;
+          padding: 9px 11px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #858e87;
+          border: 1px solid #303531;
+          border-radius: 8px;
+          background: #161917;
+          font-size: 9px;
+        }
+        #modal-note span {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 auto;
+          display: grid;
+          place-items: center;
+          color: #181a18;
+          border-radius: 50%;
+          background: #777f79;
+          font-size: 10px;
+          font-weight: 800;
+        }
+        #modal-footer {
+          padding: 14px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-top: 1px solid #30332f;
+          background: #151816;
+        }
+        #modal-footer p {
+          margin: 0;
+          color: #444b46;
+          font: 900 15px/1 system-ui, sans-serif;
+          letter-spacing: 0.08em;
+        }
+        #confirm {
+          min-width: 110px;
+          height: 36px;
+          padding: 0 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          color: #171a17;
+          border: 0;
+          border-radius: 8px;
+          background: #b8ed64;
+          font-size: 11px;
+          font-weight: 800;
+          box-shadow: 0 4px 0 #536d34;
+          transition: 150ms ease;
+        }
+        #confirm:hover { background: #ceff80; transform: translateY(-1px); }
+        #confirm:active { transform: translateY(2px); box-shadow: 0 2px 0 #536d34; }
+        #confirm svg {
+          width: 15px;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2;
+        }
         @media (max-width: 480px) {
-          #dialog-header { padding: 18px 18px 12px; }
-          #exercises { padding-right: 18px; padding-left: 18px; }
-          #caution { margin-right: 18px; margin-left: 18px; }
-          #dialog-footer { padding: 14px 18px 18px; }
-          #dialog-title { font-size: 19px; }
+          #toast {
+            right: 16px;
+            bottom: 16px;
+            min-height: 112px;
+            padding: 16px;
+            grid-template-columns: 44px minmax(0, 1fr) 72px;
+            gap: 10px;
+          }
+          #mark { width: 44px; height: 44px; font-size: 22px; }
+          #title { font-size: 14px; }
+          #message { font-size: 12px; }
+          #okay { min-width: 72px; height: 40px; }
+          #backdrop { padding: 0; }
+          #dialog { width: 100%; max-height: 100vh; min-height: 100vh; border: 0; border-radius: 0; }
+          #stretch-grid { grid-template-columns: 1fr; }
+          #modal-footer { position: sticky; bottom: 0; }
         }
       </style>
       <section id="toast" role="alert" aria-live="assertive" hidden>
@@ -174,45 +309,94 @@
       </section>
       <div id="modal" hidden>
         <div id="backdrop">
-          <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-            <header id="dialog-header">
-              <p id="eyebrow">STRETCH BREAK</p>
-              <h2 id="dialog-title">久坐拉伸跟练</h2>
-              <p id="intro">选几个动作慢慢活动，保持自然呼吸，不需要勉强拉伸。</p>
+          <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="stretch-title">
+            <header id="modal-heading">
+              <div>
+                <p>QUICK RESET · 2 MIN</p>
+                <h2 id="stretch-title">起身松一松，G</h2>
+                <span>跟着做一轮，把久坐的紧绷留在椅子上。</span>
+              </div>
+              <div id="modal-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="5" r="2.2" />
+                  <path d="M8.3 21l2.1-6.2-2-3.8m7.3 10-2.2-6.4 2.2-3.6M6 8.5l4.1 1.7h3.8L18 8.5" />
+                </svg>
+              </div>
             </header>
-            <div id="exercises">
-              <article class="exercise">
-                <div class="exercise-heading">
-                  <h3>肩颈侧屈</h3>
-                  <span class="duration">20 秒 / 侧</span>
+            <div id="stretch-grid">
+              <article class="stretch-item">
+                <div class="pose-box">
+                  <span>01</span>
+                  <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <circle cx="40" cy="19" r="8" />
+                    <path d="M40 27v25m-16-9 16-10 16 10M31 69l9-17 9 17M50 13c7 2 11 7 12 14" />
+                    <path class="pose-arrow" d="m58 24 4 3 2-5" />
+                  </svg>
                 </div>
-                <p>坐直或站直，肩膀放松，将耳朵轻轻靠向一侧肩膀，再换边；不要用手压头。</p>
+                <div class="stretch-copy">
+                  <h3>颈部侧拉伸</h3>
+                  <strong>左右各 15 秒</strong>
+                  <p>肩膀放松，耳朵缓慢靠近肩部</p>
+                </div>
               </article>
-              <article class="exercise">
-                <div class="exercise-heading">
-                  <h3>胸部打开</h3>
-                  <span class="duration">20 秒</span>
+              <article class="stretch-item">
+                <div class="pose-box">
+                  <span>02</span>
+                  <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <circle cx="40" cy="18" r="8" />
+                    <path d="M40 26v27m0-18L22 42m18-7 18 7M31 69l9-16 9 16M22 42l-7-6m43 6 7-6" />
+                    <path class="pose-arrow" d="M17 27c-5 3-7 8-6 14m52-14c5 3 7 8 6 14" />
+                  </svg>
                 </div>
-                <p>站立，双手轻扶腰侧，肩膀轻轻向后下方放松，打开胸口并自然呼吸。</p>
+                <div class="stretch-copy">
+                  <h3>扩胸拉伸</h3>
+                  <strong>保持 20 秒</strong>
+                  <p>双手向后打开，挺胸但不要憋气</p>
+                </div>
               </article>
-              <article class="exercise">
-                <div class="exercise-heading">
-                  <h3>坐姿躯干转体</h3>
-                  <span class="duration">15 秒 / 侧</span>
+              <article class="stretch-item">
+                <div class="pose-box">
+                  <span>03</span>
+                  <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <circle cx="35" cy="18" r="8" />
+                    <path d="M36 26c0 11 3 19 11 27m-10-20L26 47m11-14 6-14 5-7M36 69l11-16 6 16M36 69l-2-25" />
+                    <path class="pose-arrow" d="M54 28c5 3 8 8 8 14m-4-3 4 3 2-5" />
+                  </svg>
                 </div>
-                <p>双脚平放地面，坐稳后缓慢转向一侧，手轻扶椅背辅助，再换边；不要扭到疼痛。</p>
+                <div class="stretch-copy">
+                  <h3>站姿侧伸展</h3>
+                  <strong>左右各 15 秒</strong>
+                  <p>手臂越过头顶，身体平稳向侧面弯</p>
+                </div>
               </article>
-              <article class="exercise">
-                <div class="exercise-heading">
-                  <h3>站姿髋前侧伸展</h3>
-                  <span class="duration">20 秒 / 侧</span>
+              <article class="stretch-item">
+                <div class="pose-box">
+                  <span>04</span>
+                  <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <circle cx="32" cy="17" r="8" />
+                    <path d="M32 25c5 8 11 14 20 17M38 34 21 43m31-1 12 7M52 42l-7 25M21 43l-6 22m6-22 18 10" />
+                    <path class="pose-arrow" d="M54 31c7 0 12 3 15 8m-5-1 5 1-1-5" />
+                  </svg>
                 </div>
-                <p>前后分腿站立并扶稳桌沿，后脚跟抬起，身体重心轻轻前移，感受后侧髋部前方伸展，再换边。</p>
+                <div class="stretch-copy">
+                  <h3>腿后侧拉伸</h3>
+                  <strong>左右各 20 秒</strong>
+                  <p>脚跟着地，背部保持自然伸直</p>
+                </div>
               </article>
             </div>
-            <p id="caution">如有疼痛或不适，请立即停止并选择舒适的动作。</p>
-            <footer id="dialog-footer">
-              <button id="confirm" type="button">确认</button>
+            <div id="modal-note">
+              <span>!</span>
+              动作保持舒适即可；如果感到疼痛，请立即停止。
+            </div>
+            <footer id="modal-footer">
+              <p>MOVE EASY. FEEL BETTER.</p>
+              <button id="confirm" type="button">
+                确认完成
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m3 8 3 3 7-7" />
+                </svg>
+              </button>
             </footer>
           </section>
         </div>
