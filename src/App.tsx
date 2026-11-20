@@ -380,12 +380,12 @@ export default function App() {
         <header className="topbar">
           <div className="brand">
             <div className="brand-mark" aria-hidden="true">
-              <span>W</span>
+              <span>H</span>
             </div>
             <div>
-              <p className="eyebrow">WEST COAST WELLNESS</p>
+              <p className="eyebrow">不要久坐</p>
               <h1>
-                WESTSIDE <span>REMINDERS</span>
+                健康 <span>提醒</span>
               </h1>
             </div>
           </div>
@@ -399,7 +399,7 @@ export default function App() {
         <div className="status-strip">
           <div className={`live-dot ${allPaused ? "paused" : ""}`} />
           <div>
-            <strong>{allPaused ? "提醒已暂停" : "街区在线"}</strong>
+            <strong>{allPaused ? "提醒已暂停" : "提醒已上线"}</strong>
             <p>{allPaused ? "所有提醒暂时休息" : `${activeCount} 个提醒正在罩着你`}</p>
           </div>
           <button
@@ -413,7 +413,7 @@ export default function App() {
 
         <div className="section-heading">
           <div>
-            <p>YOUR ROUTINE</p>
+            <p>听我说</p>
             <h2>今天要照顾好自己，G</h2>
           </div>
           <span>{activeCount}/3 开启</span>
@@ -506,7 +506,7 @@ export default function App() {
               </strong>
             </div>
           </div>
-          <div className="footer-sign">STAY SHARP.</div>
+          <div className="footer-sign">动起来</div>
         </footer>
       </section>
 
@@ -535,7 +535,7 @@ export default function App() {
                   setShowStretchGuide(true);
                 }}
               >
-                好的
+                看图拉伸
               </button>
             )}
           </div>
