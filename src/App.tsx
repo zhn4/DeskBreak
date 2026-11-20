@@ -380,12 +380,12 @@ export default function App() {
         <header className="topbar">
           <div className="brand">
             <div className="brand-mark" aria-hidden="true">
-              <span>健</span>
+              <span>D</span>
             </div>
             <div>
-              <p className="eyebrow">养成健康习惯</p>
+              <p className="eyebrow">久坐间隙，轻松动一动</p>
               <h1>
-                喝水站立<span>提醒</span>
+                Desk<span>Break</span>
               </h1>
             </div>
           </div>

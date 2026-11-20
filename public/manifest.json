@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "喝水站立提醒",
+  "name": "DeskBreak",
   "version": "1.0.0",
-  "description": "提醒喝水、起身活动和提肛训练，帮助减少久坐。",
+  "description": "Gentle reminders to drink water, stand up, stretch, and move.",
   "permissions": ["alarms", "notifications", "scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "action": {
-    "default_title": "久坐提醒",
+    "default_title": "DeskBreak",
     "default_popup": "index.html"
   },
   "background": {
