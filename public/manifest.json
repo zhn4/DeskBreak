@@ -3,9 +3,20 @@
   "name": "健康提醒",
   "version": "1.0.0",
   "description": "喝水、站立拉伸和提肛训练提醒",
-  "permissions": ["notifications"],
+  "permissions": ["alarms", "notifications", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_title": "健康提醒",
     "default_popup": "index.html"
-  }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

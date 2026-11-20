@@ -13,6 +13,32 @@ type Reminder = {
   icon: "drop" | "stretch" | "core";
 };
 
+type ExtensionStorageArea = {
+  get(keys: string[]): Promise<Record<string, unknown>>;
+  set(items: Record<string, unknown>): Promise<void>;
+};
+
+type ExtensionRuntime = {
+  sendMessage(message: {
+    type: "SHOW_TAB_REMINDER";
+    reminderId: ReminderId;
+    title: string;
+    message: string;
+  }): Promise<unknown>;
+};
+
+declare global {
+  interface Window {
+    chrome?: {
+      storage?: { local: ExtensionStorageArea };
+      runtime?: ExtensionRuntime;
+    };
+  }
+}
+
+const remindersStorageKey = "westside-reminders";
+const pausedStorageKey = "westside-reminders-paused";
+
 const defaultReminders: Reminder[] = [
   {
     id: "water",
@@ -62,7 +88,7 @@ const messages: Record<ReminderId, { title: string; body: string }> = {
 };
 
 const intervalOptions = [
-  { value: 5 / 60, label: "5 秒" },
+  { value: 10 / 60, label: "10 秒" },
   { value: 15, label: "15 分钟" },
   { value: 30, label: "30 分钟" },
   { value: 45, label: "45 分钟" },
@@ -70,6 +96,35 @@ const intervalOptions = [
   { value: 90, label: "90 分钟" },
   { value: 120, label: "120 分钟" },
 ];
+
+function isReminderList(value: unknown): value is Reminder[] {
+  if (!Array.isArray(value)) return false;
+
+  return value.every((item: unknown) => {
+    if (typeof item !== "object" || item === null) return false;
+
+    return (
+      "id" in item &&
+      (item.id === "water" || item.id === "stand" || item.id === "pelvic") &&
+      "name" in item &&
+      typeof item.name === "string" &&
+      "tag" in item &&
+      typeof item.tag === "string" &&
+      "description" in item &&
+      typeof item.description === "string" &&
+      "enabled" in item &&
+      typeof item.enabled === "boolean" &&
+      "interval" in item &&
+      typeof item.interval === "number" &&
+      Number.isFinite(item.interval) &&
+      item.interval >= 10 / 60 &&
+      "color" in item &&
+      typeof item.color === "string" &&
+      "icon" in item &&
+      (item.icon === "drop" || item.icon === "stretch" || item.icon === "core")
+    );
+  });
+}
 
 function Icon({ name }: { name: Reminder["icon"] }) {
   if (name === "drop") {
@@ -124,19 +179,64 @@ function Toggle({
 export default function App() {
   const [reminders, setReminders] = useState<Reminder[]>(() => {
     try {
-      const saved = localStorage.getItem("westside-reminders");
+      const saved = localStorage.getItem(remindersStorageKey);
       return saved ? JSON.parse(saved) : defaultReminders;
     } catch {
       return defaultReminders;
     }
   });
   const [allPaused, setAllPaused] = useState(false);
-  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
+  const [settingsReady, setSettingsReady] = useState(() => !window.chrome?.storage?.local);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [previewToast, setPreviewToast] = useState<{
+    reminderId: ReminderId;
+    title: string;
+    body: string;
+  } | null>(null);
+  const [showStretchGuide, setShowStretchGuide] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const extensionStorage = window.chrome?.storage?.local;
 
   useEffect(() => {
-    localStorage.setItem("westside-reminders", JSON.stringify(reminders));
-  }, [reminders]);
+    if (!extensionStorage) return;
+
+    let active = true;
+    extensionStorage
+      .get([remindersStorageKey, pausedStorageKey])
+      .then((settings) => {
+        if (!active) return;
+        if (isReminderList(settings[remindersStorageKey])) {
+          setReminders(settings[remindersStorageKey]);
+        }
+        if (typeof settings[pausedStorageKey] === "boolean") {
+          setAllPaused(settings[pausedStorageKey]);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("无法读取提醒设置", error);
+      })
+      .finally(() => {
+        if (active) setSettingsReady(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [extensionStorage]);
+
+  useEffect(() => {
+    localStorage.setItem(remindersStorageKey, JSON.stringify(reminders));
+    if (!settingsReady || !extensionStorage) return;
+
+    void extensionStorage
+      .set({
+        [remindersStorageKey]: reminders,
+        [pausedStorageKey]: allPaused,
+      })
+      .catch((error: unknown) => {
+        console.error("无法保存提醒设置", error);
+      });
+  }, [allPaused, extensionStorage, reminders, settingsReady]);
 
   useEffect(() => {
     const clock = window.setInterval(() => setNow(Date.now()), 1000);
@@ -144,10 +244,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(null), 4200);
+    if (!previewToast) return;
+    const timeout = window.setTimeout(() => setPreviewToast(null), 4200);
     return () => window.clearTimeout(timeout);
-  }, [toast]);
+  }, [previewToast]);
+
+  useEffect(() => {
+    if (!showStretchGuide) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowStretchGuide(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showStretchGuide]);
 
   const activeCount = reminders.filter((item) => item.enabled).length;
   const nextReminder = useMemo(() => {
@@ -169,15 +278,42 @@ export default function App() {
 
   const sendTest = async (reminder: Reminder) => {
     const message = messages[reminder.id];
-    setToast(message);
-    if ("Notification" in window) {
-      const permission =
-        Notification.permission === "default"
-          ? await Notification.requestPermission()
-          : Notification.permission;
-      if (permission === "granted") {
-        new Notification(message.title, { body: message.body });
+
+    setTestError(null);
+    try {
+      if (import.meta.env.DEV) {
+        setPreviewToast({ reminderId: reminder.id, ...message });
+        return;
       }
+
+      if (!window.chrome?.runtime) {
+        throw new Error("请在 Chrome 扩展中测试标签页提醒");
+      }
+
+      const response = await window.chrome.runtime.sendMessage({
+        type: "SHOW_TAB_REMINDER",
+        reminderId: reminder.id,
+        title: message.title,
+        message: message.body,
+      });
+      if (
+        typeof response === "object" &&
+        response !== null &&
+        "error" in response &&
+        typeof response.error === "string"
+      ) {
+        throw new Error(response.error);
+      }
+      if (
+        typeof response !== "object" ||
+        response === null ||
+        !("ok" in response) ||
+        response.ok !== true
+      ) {
+        throw new Error("无法在当前标签页显示提醒");
+      }
+    } catch (error) {
+      setTestError(error instanceof Error ? error.message : "发送通知失败");
     }
   };
 
@@ -289,6 +425,11 @@ export default function App() {
                   </svg>
                 </button>
               </div>
+              {testError && (
+                <p role="alert" style={{ color: "#b42318", fontSize: "12px", marginTop: "8px" }}>
+                  {testError}
+                </p>
+              )}
             </article>
           ))}
         </div>
@@ -312,16 +453,85 @@ export default function App() {
         </footer>
       </section>
 
-      {toast && (
+      {previewToast && (
         <div className="toast" role="status">
           <div className="toast-icon">W</div>
           <div>
-            <strong>{toast.title}</strong>
-            <p>{toast.body}</p>
+            <strong>{previewToast.title}</strong>
+            <p>{previewToast.body}</p>
           </div>
-          <button type="button" onClick={() => setToast(null)} aria-label="关闭提醒">
-            ×
-          </button>
+          <div className="toast-actions">
+            {previewToast.reminderId === "stand" && (
+              <button
+                type="button"
+                className="toast-acknowledge"
+                onClick={() => {
+                  setPreviewToast(null);
+                  setShowStretchGuide(true);
+                }}
+              >
+                好的
+              </button>
+            )}
+            <button type="button" onClick={() => setPreviewToast(null)} aria-label="关闭提醒">
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showStretchGuide && (
+        <div className="stretch-modal-backdrop">
+          <section
+            className="stretch-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stretch-modal-title"
+          >
+            <header className="stretch-modal-header">
+              <p>STRETCH BREAK</p>
+              <h2 id="stretch-modal-title">久坐拉伸跟练</h2>
+              <span>选几个动作慢慢活动，保持自然呼吸，不需要勉强拉伸。</span>
+            </header>
+            <div className="stretch-exercises">
+              <article>
+                <div>
+                  <h3>肩颈侧屈</h3>
+                  <strong>20 秒 / 侧</strong>
+                </div>
+                <p>坐直或站直，肩膀放松，将耳朵轻轻靠向一侧肩膀，再换边；不要用手压头。</p>
+              </article>
+              <article>
+                <div>
+                  <h3>胸部打开</h3>
+                  <strong>20 秒</strong>
+                </div>
+                <p>站立，双手轻扶腰侧，肩膀轻轻向后下方放松，打开胸口并自然呼吸。</p>
+              </article>
+              <article>
+                <div>
+                  <h3>坐姿躯干转体</h3>
+                  <strong>15 秒 / 侧</strong>
+                </div>
+                <p>双脚平放地面，坐稳后缓慢转向一侧，手轻扶椅背辅助，再换边；不要扭到疼痛。</p>
+              </article>
+              <article>
+                <div>
+                  <h3>站姿髋前侧伸展</h3>
+                  <strong>20 秒 / 侧</strong>
+                </div>
+                <p>
+                  前后分腿站立并扶稳桌沿，后脚跟抬起，身体重心轻轻前移，感受后侧髋部前方伸展，再换边。
+                </p>
+              </article>
+            </div>
+            <p className="stretch-caution">如有疼痛或不适，请立即停止并选择舒适的动作。</p>
+            <footer className="stretch-modal-footer">
+              <button type="button" autoFocus onClick={() => setShowStretchGuide(false)}>
+                确认
+              </button>
+            </footer>
+          </section>
         </div>
       )}
     </main>
