@@ -911,3 +911,97 @@
     height: 40px;
   }
 }
+
+@media (max-height: 700px) {
+  .app-shell {
+    padding: 8px 12px;
+  }
+
+  .popup {
+    min-height: 0;
+  }
+
+  .topbar {
+    min-height: 74px;
+    padding: 14px 18px;
+  }
+
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-mark span {
+    font-size: 24px;
+  }
+
+  .brand h1 {
+    font-size: 20px;
+  }
+
+  .status-strip {
+    margin: 10px 16px 0;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .section-heading {
+    padding: 14px 17px 8px;
+  }
+
+  .reminder-list {
+    padding: 0 16px 10px;
+    gap: 7px;
+  }
+
+  .card-top {
+    padding: 10px 12px 8px 14px;
+    gap: 10px;
+  }
+
+  .reminder-identity {
+    gap: 9px;
+  }
+
+  .reminder-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .reminder-icon svg {
+    width: 19px;
+  }
+
+  .name-line h3 {
+    font-size: 13px;
+  }
+
+  .reminder-identity p {
+    margin-top: 2px;
+    font-size: 9px;
+  }
+
+  .card-controls {
+    padding: 6px 12px 7px 14px;
+    gap: 7px;
+  }
+
+  .select-wrap select,
+  .test-button {
+    height: 26px;
+  }
+
+  .select-wrap svg {
+    top: 5px;
+  }
+
+  .footer {
+    min-height: 54px;
+    padding: 0 18px;
+  }
+
+  .next-reminder svg {
+    width: 20px;
+  }
+}
