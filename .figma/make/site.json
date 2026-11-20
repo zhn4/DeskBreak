@@ -1,0 +1,10 @@
+{
+  "description": "A Chrome wellness reminder app that prompts users to drink water, stand and stretch, and do pelvic floor exercises at customizable intervals with playful West Coast gangster-style greetings.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
